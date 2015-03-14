@@ -42,12 +42,22 @@ fid_run_new_(FidFilter* filt, FidFunc** funcp)
 
 	return run;
 }
+
+FidFilter*
+fid_cat_(int freeme, FidFilter* filt1, FidFilter* filt2)
+{
+	FidFilter* filt;
+
+	filt = fid_cat(freeme, filt1, filt2, 0);
+
+	return filt;
+}
 */
 import "C"
 
 import (
-	"log"
 	"unsafe"
+	"errors"
 )
 
 type FilterDesign struct {
@@ -56,7 +66,7 @@ type FilterDesign struct {
 	funcp     *C.FidFunc
 }
 
-func NewFilterDesign(spec string, rate float64) *FilterDesign {
+func NewFilterDesign(spec string, rate float64) (*FilterDesign, error) {
 	var (
 		rate_  = C.double(rate)
 		spec_  = C.CString(spec)
@@ -66,12 +76,55 @@ func NewFilterDesign(spec string, rate float64) *FilterDesign {
 	defer C.free(unsafe.Pointer(spec_))
 	err := C.fid_parse(rate_, &spec_, &filt_)
 	if err != nil {
-		log.Fatal("Error in filter design:", C.GoString(err))
+		return nil, errors.New(C.GoString(err))
 	}
-	run := C.fid_run_new_(filt_, &funcp_)
+	run_ := C.fid_run_new_(filt_, &funcp_)
 	return &FilterDesign{
 		fidFilter: filt_,
-		fidRun:    run,
+		fidRun:    run_,
 		funcp:     funcp_,
+	}, nil
+}
+
+func FidCat(freeme int, filters []*FilterDesign) (*FilterDesign, error) {
+	var filt_ *C.FidFilter
+
+	cat := func(sumFilt *C.FidFilter, nextFilt *C.FidFilter) (*C.FidFilter, error) {
+		filt_, err := C.fid_cat_(C.int(freeme), sumFilt, nextFilt)
+		if err != nil {
+			return nil, err
+		}
+		return filt_, nil
 	}
+
+	numFilts := len(filters)
+
+	switch {
+	case numFilts < 2:
+		return nil, errors.New("Too few filters in argument slice. Must have atleast 2.")
+	case numFilts >= 2:
+		var err error
+		if filt_, err = cat(filters[0].fidFilter, filters[1].fidFilter); err != nil {
+			return nil, err
+		}
+		for i := 2; i < len(filters); i++ {
+			if filt_, err = cat(filt_, filters[i].fidFilter); err != nil {
+				return nil, err
+			}
+		}
+		if freeme == 1 {
+			for _, val := range filters {
+				C.fid_run_free(val.fidRun)
+			}
+		}
+	}
+
+	funcp_ := new(C.FidFunc)
+	run_ := C.fid_run_new_(filt_, &funcp_)
+
+	return &FilterDesign{
+		fidFilter: filt_,
+		fidRun:    run_,
+		funcp:     funcp_,
+	}, nil
 }

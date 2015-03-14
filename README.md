@@ -2,4 +2,4 @@ Go bindings to fidlib, a c library designed to provide filtering services to EEG
 
 fidlib homepage: <http://uazu.net/fidlib>
 
-The bindings are a work in progress.
+See fidlib.txt for a list of predefined filters and their specification string.
