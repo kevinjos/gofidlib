@@ -42,17 +42,6 @@ fid_run_new_(FidFilter* filt, FidFunc** funcp)
 
 	return run;
 }
-
-
-fid_run(FidFunc *funcp, void *fbuf1, double* in, int size_in, double* out)
-{
-	int i;
-
-	for (i = 0; i < size_in; i++)
-	{
-		out[i] = funcp(fbuf1, in[i]);
-	}
-}
 */
 import "C"
 
@@ -61,27 +50,10 @@ import (
 	"unsafe"
 )
 
-type Filter struct {
-	design *FilterDesign
-	buf    unsafe.Pointer
-}
-
-func (f *Filter) Run(in []float64, out []float64) {
-	C.fid_run(f.design.Funcp, f.buf, (*C.double)(&in[0]), C.int(len(in)), (*C.double)(&out[0]))
-}
-
-func NewFilter(design *FilterDesign) *Filter {
-	buf := C.fid_run_newbuf(design.FidRun)
-	return &Filter{
-		design: design,
-		buf:    buf,
-	}
-}
-
 type FilterDesign struct {
-	FidFilter *C.FidFilter
-	FidRun    unsafe.Pointer
-	Funcp     *C.FidFunc
+	fidFilter *C.FidFilter
+	fidRun    unsafe.Pointer
+	funcp     *C.FidFunc
 }
 
 func NewFilterDesign(spec string, rate float64) *FilterDesign {
@@ -98,12 +70,8 @@ func NewFilterDesign(spec string, rate float64) *FilterDesign {
 	}
 	run := C.fid_run_new_(filt_, &funcp_)
 	return &FilterDesign{
-		FidFilter: filt_,
-		FidRun:    run,
-		Funcp:     funcp_,
+		fidFilter: filt_,
+		fidRun:    run,
+		funcp:     funcp_,
 	}
-}
-
-func Version() string {
-	return C.GoString(C.fid_version())
 }
