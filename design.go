@@ -86,6 +86,11 @@ func NewFilterDesign(spec string, rate float64) (*FilterDesign, error) {
 	}, nil
 }
 
+func (fd *FilterDesign) Free() {
+	C.free(unsafe.Pointer(fd.fidFilter))
+	C.fid_run_free(fd.fidRun)
+}
+
 func FidCat(freeme int, filters []*FilterDesign) (*FilterDesign, error) {
 	var filt_ *C.FidFilter
 

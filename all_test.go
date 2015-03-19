@@ -39,14 +39,16 @@ var testRs = []TestR{
 func TestFilterResponse(t *testing.T) {
 	design, _ := NewFilterDesign("HpBeZ1/2", 8)
 	filt := NewFilter(design)
-
+	defer func() {
+		design.Free()
+		filt.Free()
+	}()
 	for i, test := range testRs {
 		resp := filt.Response(test.in)
 		if resp != test.out {
 			t.Errorf("#%d: Response(%v)=%v; want %v", i, test.in, resp, test.out)	
 		}
 	}
-	filt.Close()
 }
 
 type TestPR struct {
@@ -62,6 +64,10 @@ var testPRs = []TestPR{
 func TestFilterPhaseResponse(t *testing.T) {
 	design, _ := NewFilterDesign("HpBeZ1/2", 8)
 	filt := NewFilter(design)
+	defer func() {
+		design.Free()
+		filt.Free()
+	}()
 
 	for i, test := range testPRs {
 		resp, phase := filt.PhaseResponse(test.in)
@@ -69,8 +75,6 @@ func TestFilterPhaseResponse(t *testing.T) {
 			t.Errorf("#%d: PhaseResponse(%v)=%v; want %v", i, test.in, resp, phase, test.out)	
 		}
 	}
-
-	filt.Close()
 }
 
 type TestD struct {
@@ -96,6 +100,7 @@ func TestFilterDelay(t *testing.T) {
 		if delay != test.out {
 			t.Errorf("#%d: Delay(%s)=%v; want %v", i, test.in, delay, test.out)	
 		}
-		filt.Close()
+		filt.Free()
+		design.Free()
 	}
 }

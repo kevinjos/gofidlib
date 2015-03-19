@@ -52,9 +52,7 @@ func (f *Filter) Zap() {
 
 //Deallocate the run and buffer objects
 //For use when filtering complete
-func (f *Filter) Close() {
-	C.free(unsafe.Pointer(f.design.fidFilter))
-	C.fid_run_free(f.design.fidRun)
+func (f *Filter) Free() {
 	C.fid_run_freebuf(f.buf)
 }
 

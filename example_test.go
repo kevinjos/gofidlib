@@ -7,6 +7,10 @@ import (
 func ExampleFilter_Run() {
 	design, _ := NewFilterDesign("HpBeZ1/2", 4)
 	filt := NewFilter(design)
+	defer func() {
+		design.Free()
+		filt.Free()
+	}()
 
 	in := make([]float64, 4)
 	out := make([]float64, 4)
